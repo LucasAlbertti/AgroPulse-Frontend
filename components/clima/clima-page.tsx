@@ -20,7 +20,8 @@ import {
   MapPin,
   AlertTriangle,
   Gauge,
-  Leaf
+  Leaf,
+  Building2
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -30,6 +31,13 @@ type CondicaoClima =
   | 'nublado'
   | 'chuva'
   | 'parcial'
+
+type Fazenda = {
+  id: number
+  nome: string
+  cidade: string
+  estado: string
+}
 
 type ClimaData = {
   local: {
@@ -78,15 +86,55 @@ export function ClimaPage() {
   const [clima, setClima] =
     useState<ClimaData | null>(null)
 
+  const [fazendas, setFazendas] =
+    useState<Fazenda[]>([])
+
+  const [fazendaSelecionada, setFazendaSelecionada] =
+    useState('')
+
   const [loading, setLoading] =
     useState(true)
 
-  async function carregarClima() {
+  async function carregarFazendas() {
 
     try {
 
       const response =
-        await api.get('/clima')
+        await api.get('/fazendas')
+
+      setFazendas(response.data)
+
+      if (response.data.length > 0) {
+
+        setFazendaSelecionada(
+          String(response.data[0].id)
+        )
+      }
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao carregar fazendas:',
+        error
+      )
+    }
+  }
+
+  async function carregarClima(
+    fazendaId?: string
+  ) {
+
+    try {
+
+      setLoading(true)
+
+      const url =
+        fazendaId
+          ? `/clima?fazenda_id=${fazendaId}`
+          : '/clima'
+
+      const response =
+        await api.get(url)
 
       setClima(response.data)
 
@@ -97,6 +145,8 @@ export function ClimaPage() {
         error
       )
 
+      setClima(null)
+
     } finally {
 
       setLoading(false)
@@ -105,9 +155,24 @@ export function ClimaPage() {
 
   useEffect(() => {
 
-    carregarClima()
+    carregarFazendas()
 
   }, [])
+
+  useEffect(() => {
+
+    if (fazendaSelecionada) {
+
+      carregarClima(
+        fazendaSelecionada
+      )
+
+    } else {
+
+      carregarClima()
+    }
+
+  }, [fazendaSelecionada])
 
   if (loading) {
 
@@ -164,7 +229,7 @@ export function ClimaPage() {
           "
         />
 
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
           <div>
 
@@ -192,23 +257,70 @@ export function ClimaPage() {
             </h1>
 
             <p className="text-muted-foreground mt-2 max-w-2xl">
-              Acompanhe temperatura, chuva, vento, umidade e previsão semanal para apoiar decisões no campo.
+              Selecione uma fazenda e acompanhe temperatura, chuva, vento,
+              umidade e previsão semanal daquela localização.
             </p>
 
           </div>
 
           <div
             className="
-              hidden
-              lg:flex
-              size-20
-              items-center
-              justify-center
-              rounded-3xl
-              bg-sky-500/10
+              w-full
+              lg:w-[320px]
+              rounded-2xl
+              border
+              border-border
+              bg-background/70
+              p-4
             "
           >
-            <CloudSun className="size-10 text-sky-500" />
+
+            <label
+              className="
+                text-sm
+                font-medium
+                flex
+                items-center
+                gap-2
+                mb-2
+              "
+            >
+              <Building2 className="size-4 text-primary" />
+              Fazenda
+            </label>
+
+            <select
+              value={fazendaSelecionada}
+              onChange={(e) =>
+                setFazendaSelecionada(
+                  e.target.value
+                )
+              }
+              className="
+                w-full
+                rounded-xl
+                border
+                border-border
+                bg-background
+                px-4
+                py-3
+                outline-none
+                transition
+                focus:ring-2
+                focus:ring-primary
+              "
+            >
+              {fazendas.map((fazenda) => (
+
+                <option
+                  key={fazenda.id}
+                  value={fazenda.id}
+                >
+                  {fazenda.nome} — {fazenda.cidade}/{fazenda.estado}
+                </option>
+              ))}
+            </select>
+
           </div>
 
         </div>

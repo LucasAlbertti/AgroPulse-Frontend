@@ -1,6 +1,14 @@
 'use client'
 
 import {
+  useEffect,
+  useState,
+  type ElementType
+} from 'react'
+
+import api from '@/lib/api'
+
+import {
   Cloud,
   Sun,
   CloudRain,
@@ -28,75 +36,40 @@ type CondicaoClima =
   | 'chuva'
   | 'parcial'
 
-const climaData = {
+type ClimaData = {
   local: {
-    fazenda: 'Fazenda Principal',
-    cidade: 'Concórdia',
-    estado: 'SC'
-  },
+    fazenda: string
+    cidade: string
+    estado: string
+  }
 
   atual: {
-    temperatura: 28,
-    sensacao: 30,
-    umidade: 65,
-    condicao: 'Parcialmente nublado',
-    vento: 12,
-    chanceChuva: 30
-  },
+    temperatura: number
+    sensacao: number
+    umidade: number
+    condicao: string
+    tipo: CondicaoClima
+    vento: number
+    chanceChuva: number
+  }
 
-  previsao: [
-    {
-      dia: 'Hoje',
-      min: 22,
-      max: 30,
-      condicao: 'parcial' as CondicaoClima,
-      chanceChuva: 30
-    },
-    {
-      dia: 'Amanhã',
-      min: 21,
-      max: 28,
-      condicao: 'nublado' as CondicaoClima,
-      chanceChuva: 45
-    },
-    {
-      dia: 'Qua',
-      min: 19,
-      max: 26,
-      condicao: 'chuva' as CondicaoClima,
-      chanceChuva: 80
-    },
-    {
-      dia: 'Qui',
-      min: 20,
-      max: 27,
-      condicao: 'chuva' as CondicaoClima,
-      chanceChuva: 60
-    },
-    {
-      dia: 'Sex',
-      min: 22,
-      max: 29,
-      condicao: 'sol' as CondicaoClima,
-      chanceChuva: 15
-    }
-  ]
+  previsao: {
+    dia: string
+    min: number
+    max: number
+    condicao: CondicaoClima
+    chanceChuva: number
+  }[]
 }
 
-const weatherIcons: Record<
-  CondicaoClima,
-  React.ElementType
-> = {
+const weatherIcons: Record<CondicaoClima, ElementType> = {
   sol: Sun,
   nublado: Cloud,
   chuva: CloudRain,
   parcial: CloudSun
 }
 
-const weatherColors: Record<
-  CondicaoClima,
-  string
-> = {
+const weatherColors: Record<CondicaoClima, string> = {
   sol: 'text-yellow-500',
   nublado: 'text-slate-400',
   chuva: 'text-blue-500',
@@ -104,7 +77,69 @@ const weatherColors: Record<
 }
 
 export function WeatherCard() {
-  const { atual, previsao, local } = climaData
+
+  const [clima, setClima] =
+    useState<ClimaData | null>(null)
+
+  const [loading, setLoading] =
+    useState(true)
+
+  async function carregarClima() {
+
+    try {
+
+      const response =
+        await api.get('/clima')
+
+      setClima(response.data)
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao carregar clima:',
+        error
+      )
+
+    } finally {
+
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+
+    carregarClima()
+
+  }, [])
+
+  if (loading) {
+
+    return (
+      <Card className="rounded-3xl border-border bg-card shadow-sm">
+        <CardContent className="p-6">
+          <div className="h-[360px] rounded-3xl bg-muted animate-pulse" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!clima) {
+
+    return (
+      <Card className="rounded-3xl border-border bg-card shadow-sm">
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">
+            Não foi possível carregar o clima.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const { atual, previsao, local } = clima
+
+  const IconeAtual =
+    weatherIcons[atual.tipo] || CloudSun
 
   return (
     <Card
@@ -218,7 +253,12 @@ export function WeatherCard() {
                 shrink-0
               "
             >
-              <CloudSun className="size-10 text-orange-400" />
+              <IconeAtual
+                className={cn(
+                  'size-10',
+                  weatherColors[atual.tipo]
+                )}
+              />
             </div>
           </div>
 
@@ -309,13 +349,14 @@ export function WeatherCard() {
           </div>
 
           <div className="grid grid-cols-5 gap-2">
-            {previsao.map((dia, index) => {
+            {previsao.slice(0, 5).map((dia, index) => {
+
               const WeatherIcon =
-                weatherIcons[dia.condicao]
+                weatherIcons[dia.condicao] || CloudSun
 
               return (
                 <div
-                  key={dia.dia}
+                  key={`${dia.dia}-${index}`}
                   className={cn(
                     `
                       rounded-2xl

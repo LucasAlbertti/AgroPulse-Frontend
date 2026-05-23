@@ -1,6 +1,14 @@
 'use client'
 
 import {
+  useEffect,
+  useState,
+  type ElementType
+} from 'react'
+
+import api from '@/lib/api'
+
+import {
   CloudSun,
   Sun,
   Cloud,
@@ -23,77 +31,35 @@ type CondicaoClima =
   | 'chuva'
   | 'parcial'
 
-const climaData = {
+type ClimaData = {
   local: {
-    fazenda: 'Fazenda Principal',
-    cidade: 'Concórdia',
-    estado: 'SC'
-  },
+    fazenda: string
+    cidade: string
+    estado: string
+  }
 
   atual: {
-    temperatura: 28,
-    sensacao: 30,
-    umidade: 65,
-    condicao: 'Parcialmente nublado',
-    vento: 12,
-    chanceChuva: 30,
-    pressao: 1014
-  },
+    temperatura: number
+    sensacao: number
+    umidade: number
+    condicao: string
+    tipo: CondicaoClima
+    vento: number
+    chanceChuva: number
+    pressao: number
+  }
 
-  previsao: [
-    {
-      dia: 'Hoje',
-      min: 22,
-      max: 30,
-      condicao: 'parcial' as CondicaoClima,
-      chanceChuva: 30
-    },
-    {
-      dia: 'Amanhã',
-      min: 21,
-      max: 28,
-      condicao: 'nublado' as CondicaoClima,
-      chanceChuva: 45
-    },
-    {
-      dia: 'Quarta',
-      min: 19,
-      max: 26,
-      condicao: 'chuva' as CondicaoClima,
-      chanceChuva: 80
-    },
-    {
-      dia: 'Quinta',
-      min: 20,
-      max: 27,
-      condicao: 'chuva' as CondicaoClima,
-      chanceChuva: 60
-    },
-    {
-      dia: 'Sexta',
-      min: 22,
-      max: 29,
-      condicao: 'sol' as CondicaoClima,
-      chanceChuva: 15
-    },
-    {
-      dia: 'Sábado',
-      min: 23,
-      max: 31,
-      condicao: 'sol' as CondicaoClima,
-      chanceChuva: 10
-    },
-    {
-      dia: 'Domingo',
-      min: 22,
-      max: 30,
-      condicao: 'parcial' as CondicaoClima,
-      chanceChuva: 25
-    }
-  ]
+  previsao: {
+    dia: string
+    min: number
+    max: number
+    condicao: CondicaoClima
+    descricao: string
+    chanceChuva: number
+  }[]
 }
 
-const weatherIcons: Record<CondicaoClima, React.ElementType> = {
+const weatherIcons: Record<CondicaoClima, ElementType> = {
   sol: Sun,
   nublado: Cloud,
   chuva: CloudRain,
@@ -108,7 +74,67 @@ const weatherColors: Record<CondicaoClima, string> = {
 }
 
 export function ClimaPage() {
-  const { atual, previsao, local } = climaData
+
+  const [clima, setClima] =
+    useState<ClimaData | null>(null)
+
+  const [loading, setLoading] =
+    useState(true)
+
+  async function carregarClima() {
+
+    try {
+
+      const response =
+        await api.get('/clima')
+
+      setClima(response.data)
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao carregar clima:',
+        error
+      )
+
+    } finally {
+
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+
+    carregarClima()
+
+  }, [])
+
+  if (loading) {
+
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <p className="text-muted-foreground">
+          Carregando dados climáticos...
+        </p>
+      </div>
+    )
+  }
+
+  if (!clima) {
+
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <p className="text-muted-foreground">
+          Não foi possível carregar o clima.
+        </p>
+      </div>
+    )
+  }
+
+  const { atual, previsao, local } = clima
+
+  const IconeAtual =
+    weatherIcons[atual.tipo] || CloudSun
 
   return (
     <div className="space-y-8">
@@ -158,7 +184,7 @@ export function ClimaPage() {
               "
             >
               <CloudSun className="size-4" />
-              Monitoramento climático
+              Monitoramento climático em tempo real
             </div>
 
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
@@ -166,8 +192,7 @@ export function ClimaPage() {
             </h1>
 
             <p className="text-muted-foreground mt-2 max-w-2xl">
-              Acompanhe as condições climáticas da propriedade, previsão de chuva,
-              temperatura, vento e alertas para apoiar decisões no campo.
+              Acompanhe temperatura, chuva, vento, umidade e previsão semanal para apoiar decisões no campo.
             </p>
 
           </div>
@@ -225,6 +250,7 @@ export function ClimaPage() {
 
                 <div className="flex items-center gap-2 text-muted-foreground mb-4">
                   <MapPin className="size-4 text-primary" />
+
                   <span>
                     {local.fazenda} — {local.cidade}, {local.estado}
                   </span>
@@ -245,34 +271,27 @@ export function ClimaPage() {
               </div>
 
               <div
-                className="
-                  size-32
-                  rounded-[36px]
-                  bg-orange-500/10
-                  border
-                  border-orange-500/20
-                  flex
-                  items-center
-                  justify-center
-                  shrink-0
-                "
+                className={cn(
+                  `
+                    size-32
+                    rounded-[36px]
+                    border
+                    flex
+                    items-center
+                    justify-center
+                    shrink-0
+                  `,
+                  weatherColors[atual.tipo]
+                )}
               >
-                <CloudSun className="size-16 text-orange-400" />
+                <IconeAtual className="size-16" />
               </div>
 
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
 
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-background/60
-                  p-4
-                "
-              >
+              <div className="rounded-2xl border border-border bg-background/60 p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Droplets className="size-4 text-blue-500" />
                   Umidade
@@ -283,15 +302,7 @@ export function ClimaPage() {
                 </p>
               </div>
 
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-background/60
-                  p-4
-                "
-              >
+              <div className="rounded-2xl border border-border bg-background/60 p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Wind className="size-4 text-cyan-500" />
                   Vento
@@ -302,15 +313,7 @@ export function ClimaPage() {
                 </p>
               </div>
 
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-background/60
-                  p-4
-                "
-              >
+              <div className="rounded-2xl border border-border bg-background/60 p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Umbrella className="size-4 text-primary" />
                   Chuva
@@ -321,15 +324,7 @@ export function ClimaPage() {
                 </p>
               </div>
 
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-background/60
-                  p-4
-                "
-              >
+              <div className="rounded-2xl border border-border bg-background/60 p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Gauge className="size-4 text-purple-500" />
                   Pressão
@@ -397,8 +392,7 @@ export function ClimaPage() {
             </h2>
 
             <p className="text-muted-foreground mt-3 leading-relaxed">
-              Há previsão de chuva forte nos próximos dias. Avalie atividades de
-              pulverização, colheita e preparo do solo com atenção.
+              Chance de chuva para hoje: {atual.chanceChuva}%. Avalie atividades como pulverização, colheita e preparo do solo.
             </p>
 
             <div
@@ -417,7 +411,9 @@ export function ClimaPage() {
               </div>
 
               <p className="font-semibold mt-2">
-                Priorizar manejo antes da quarta-feira.
+                {atual.chanceChuva >= 60
+                  ? 'Evite operações sensíveis à chuva.'
+                  : 'Condições favoráveis para manejo no campo.'}
               </p>
             </div>
 
@@ -470,12 +466,13 @@ export function ClimaPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
 
           {previsao.map((dia, index) => {
+
             const WeatherIcon =
-              weatherIcons[dia.condicao]
+              weatherIcons[dia.condicao] || CloudSun
 
             return (
               <div
-                key={dia.dia}
+                key={`${dia.dia}-${index}`}
                 className={cn(
                   `
                     rounded-3xl
@@ -513,6 +510,10 @@ export function ClimaPage() {
                 >
                   <WeatherIcon className="size-8" />
                 </div>
+
+                <p className="text-xs text-muted-foreground mb-3">
+                  {dia.descricao}
+                </p>
 
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-muted-foreground">

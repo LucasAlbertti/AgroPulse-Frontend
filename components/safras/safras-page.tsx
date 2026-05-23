@@ -11,7 +11,8 @@ import {
   Sprout,
   Wheat,
   Calendar,
-  Tractor
+  Tractor,
+  CheckCircle2
 } from 'lucide-react'
 
 import { SafraModal }
@@ -27,11 +28,13 @@ type Safra = {
   data_colheita: string
   produtividade: number
   talhao_id: number
+  status: string
 }
 
 type Talhao = {
   id: number
   nome: string
+  fazenda_id: number
 }
 
 const culturaStyles: Record<
@@ -83,6 +86,40 @@ const culturaStyles: Record<
     bg: 'bg-emerald-500/10',
     text: 'text-emerald-600',
     border: 'border-emerald-500/20'
+  }
+}
+
+const statusStyles: Record<
+  string,
+  {
+    bg: string
+    text: string
+    border: string
+  }
+> = {
+
+  Planejada: {
+    bg: 'bg-blue-500/10',
+    text: 'text-blue-600',
+    border: 'border-blue-500/20'
+  },
+
+  Ativa: {
+    bg: 'bg-green-500/10',
+    text: 'text-green-600',
+    border: 'border-green-500/20'
+  },
+
+  Concluída: {
+    bg: 'bg-zinc-500/10',
+    text: 'text-zinc-500',
+    border: 'border-zinc-500/20'
+  },
+
+  Cancelada: {
+    bg: 'bg-red-500/10',
+    text: 'text-red-600',
+    border: 'border-red-500/20'
   }
 }
 
@@ -148,6 +185,7 @@ export function SafrasPage() {
     data_colheita: string
     produtividade: number
     talhao_id: number
+    status: string
   }) {
 
     try {
@@ -182,9 +220,44 @@ export function SafrasPage() {
     }
   }
 
+  async function concluirSafra(
+    safra: Safra
+  ) {
+
+    try {
+
+      await api.put(
+        `/safras/${safra.id}`,
+        {
+          cultura:
+            safra.cultura,
+          data_plantio:
+            safra.data_plantio,
+          data_colheita:
+            safra.data_colheita,
+          produtividade:
+            safra.produtividade,
+          talhao_id:
+            safra.talhao_id,
+          status:
+            'Concluída'
+        }
+      )
+
+      carregarDados()
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao concluir safra:',
+        error
+      )
+    }
+  }
+
   async function excluirSafra() {
 
-    if (!safraParaExcluir)
+    if (safraParaExcluir === null)
       return
 
     try {
@@ -283,7 +356,6 @@ export function SafrasPage() {
         onConfirm={excluirSafra}
       />
 
-      {/* HEADER */}
       <div className="flex items-center justify-between">
 
         <div>
@@ -322,7 +394,6 @@ export function SafrasPage() {
 
       </div>
 
-      {/* GRID */}
       <div className="grid gap-5">
 
         {safras.length === 0 && (
@@ -343,10 +414,15 @@ export function SafrasPage() {
 
         {safras.map((safra) => {
 
-          const style =
+          const culturaStyle =
             culturaStyles[
               safra.cultura
             ] || culturaStyles.Soja
+
+          const statusStyle =
+            statusStyles[
+              safra.status || 'Ativa'
+            ] || statusStyles.Ativa
 
           return (
 
@@ -368,7 +444,6 @@ export function SafrasPage() {
               "
             >
 
-              {/* Glow */}
               <div
                 className="
                   absolute
@@ -383,7 +458,6 @@ export function SafrasPage() {
 
               <div className="relative z-10">
 
-                {/* TOP */}
                 <div className="flex items-start justify-between">
 
                   <div className="flex gap-4">
@@ -412,6 +486,7 @@ export function SafrasPage() {
                       <div
                         className="
                           flex
+                          flex-wrap
                           items-center
                           gap-3
                         "
@@ -434,12 +509,28 @@ export function SafrasPage() {
                             border
                             text-sm
                             font-medium
-                            ${style.bg}
-                            ${style.text}
-                            ${style.border}
+                            ${culturaStyle.bg}
+                            ${culturaStyle.text}
+                            ${culturaStyle.border}
                           `}
                         >
-                          Ativa
+                          {safra.cultura}
+                        </div>
+
+                        <div
+                          className={`
+                            px-3
+                            py-1
+                            rounded-full
+                            border
+                            text-sm
+                            font-medium
+                            ${statusStyle.bg}
+                            ${statusStyle.text}
+                            ${statusStyle.border}
+                          `}
+                        >
+                          {safra.status || 'Ativa'}
                         </div>
 
                       </div>
@@ -472,7 +563,6 @@ export function SafrasPage() {
 
                 </div>
 
-                {/* STATS */}
                 <div
                   className="
                     grid
@@ -588,10 +678,11 @@ export function SafrasPage() {
 
                 </div>
 
-                {/* BUTTONS */}
                 <div
                   className="
                     flex
+                    flex-col
+                    sm:flex-row
                     gap-3
                     mt-6
                   "
@@ -619,6 +710,39 @@ export function SafrasPage() {
                   >
                     Editar
                   </button>
+
+                  {safra.status !== 'Concluída' && (
+
+                    <button
+                      onClick={() =>
+                        concluirSafra(
+                          safra
+                        )
+                      }
+                      className="
+                        flex-1
+                        px-5
+                        py-3
+                        rounded-2xl
+                        bg-green-500
+                        text-white
+                        font-medium
+                        hover:opacity-90
+                        transition
+                        shadow-lg
+                        flex
+                        items-center
+                        justify-center
+                        gap-2
+                      "
+                    >
+
+                      <CheckCircle2 className="size-5" />
+
+                      Concluir
+
+                    </button>
+                  )}
 
                   <button
                     onClick={() => {

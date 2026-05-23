@@ -20,6 +20,7 @@ type SafraModalProps = {
     data_colheita: string
     produtividade: number
     talhao_id: number
+    status: string
   }) => void
 
   fazendas?: Fazenda[]
@@ -36,6 +37,7 @@ type SafraModalProps = {
     data_colheita: string
     produtividade: number
     talhao_id: number
+    status?: string
   }
 }
 
@@ -49,6 +51,13 @@ const culturasDisponiveis = [
   'Pastagem'
 ]
 
+const statusDisponiveis = [
+  'Planejada',
+  'Ativa',
+  'Concluída',
+  'Cancelada'
+]
+
 export function SafraModal({
   open,
   onClose,
@@ -59,6 +68,9 @@ export function SafraModal({
 
   const [cultura, setCultura] =
     useState('Soja')
+
+  const [status, setStatus] =
+    useState('Ativa')
 
   const [dataPlantio, setDataPlantio] =
     useState('')
@@ -72,6 +84,13 @@ export function SafraModal({
   const [talhaoId, setTalhaoId] =
     useState('')
 
+  function formatarDataInput(data?: string) {
+
+    if (!data) return ''
+
+    return data.split('T')[0]
+  }
+
   useEffect(() => {
 
     if (initialData) {
@@ -80,12 +99,20 @@ export function SafraModal({
         initialData.cultura
       )
 
+      setStatus(
+        initialData.status || 'Ativa'
+      )
+
       setDataPlantio(
-        initialData.data_plantio
+        formatarDataInput(
+          initialData.data_plantio
+        )
       )
 
       setDataColheita(
-        initialData.data_colheita
+        formatarDataInput(
+          initialData.data_colheita
+        )
       )
 
       setProdutividade(
@@ -99,6 +126,8 @@ export function SafraModal({
     } else {
 
       setCultura('Soja')
+
+      setStatus('Ativa')
 
       setDataPlantio('')
 
@@ -207,8 +236,52 @@ export function SafraModal({
 
           </div>
 
-          {/* Talhão */}
+          {/* Status */}
           <div>
+
+            <label className="text-sm font-medium">
+              Status
+            </label>
+
+            <select
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value)
+              }
+              className="
+                mt-2
+                w-full
+                rounded-2xl
+                border
+                border-border
+                bg-background
+                px-4
+                py-3
+                outline-none
+                transition
+                focus:ring-2
+                focus:ring-primary
+              "
+            >
+
+              {statusDisponiveis.map(
+                (item) => (
+
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
+          {/* Talhão */}
+          <div className="md:col-span-2">
 
             <label className="text-sm font-medium">
               Talhão
@@ -378,6 +451,7 @@ export function SafraModal({
 
               if (
                 !cultura ||
+                !status ||
                 !dataPlantio ||
                 !dataColheita ||
                 !produtividade ||
@@ -393,7 +467,8 @@ export function SafraModal({
                 produtividade:
                   Number(produtividade),
                 talhao_id:
-                  Number(talhaoId)
+                  Number(talhaoId),
+                status
               })
             }}
             className="

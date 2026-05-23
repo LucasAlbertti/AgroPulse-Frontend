@@ -107,7 +107,7 @@ export function StatsCards() {
     },
 
     {
-      title: 'Safras',
+      title: 'Safras Ativas',
       value: data.total_safras,
       icon: Sprout,
 

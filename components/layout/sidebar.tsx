@@ -11,7 +11,8 @@ import {
   Settings,
   ChevronLeft,
   Menu,
-  Leaf
+  Leaf,
+  FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -31,6 +32,7 @@ const menuItems = [
   { id: 'safras', label: 'Safras', icon: Sprout },
   { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
   { id: 'clima', label: 'Clima', icon: Cloud },
+  { id: 'relatorios', label: 'Relatórios', icon: FileText },
   { id: 'configuracoes', label: 'Configurações', icon: Settings },
 ]
 

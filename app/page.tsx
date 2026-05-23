@@ -12,6 +12,7 @@ import { TalhoesPage } from '@/components/talhoes/talhoes-page'
 import { SafrasPage } from '@/components/safras/safras-page'
 import { FinanceiroPage } from '@/components/financeiro/financeiro-page'
 import { ClimaPage } from '@/components/clima/clima-page'
+import { RelatoriosPage } from '@/components/relatorios/relatorios-page'
 import { ConfiguracoesPage } from '@/components/configuracoes/configuracoes-page'
 
 import { LoginForm } from '@/components/auth/login-form'
@@ -25,6 +26,7 @@ const pageTitles: Record<string, string> = {
   safras: 'Safras',
   financeiro: 'Financeiro',
   clima: 'Clima',
+  relatorios: 'Relatórios',
   configuracoes: 'Configurações',
 }
 
@@ -119,6 +121,10 @@ export default function Home() {
             <ClimaPage />
           )}
 
+          {activeItem === 'relatorios' && (
+            <RelatoriosPage />
+          )}
+
           {activeItem === 'configuracoes' && (
             <ConfiguracoesPage />
           )}
@@ -129,6 +135,7 @@ export default function Home() {
             activeItem !== 'safras' &&
             activeItem !== 'financeiro' &&
             activeItem !== 'clima' &&
+            activeItem !== 'relatorios' &&
             activeItem !== 'configuracoes' && (
 
             <div className="flex items-center justify-center h-[60vh]">
